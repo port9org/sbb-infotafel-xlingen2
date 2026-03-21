@@ -84,7 +84,8 @@ def capture():
     options.add_argument(f'--window-size={WIDTH},{HEIGHT}')
     options.add_argument('--hide-scrollbars')
 
-    driver = webdriver.Chrome(options=options)
+    chromedriver = shutil.which('chromedriver') or '/usr/bin/chromedriver'
+    driver = webdriver.Chrome(service=Service(chromedriver), options=options)
     try:
         driver.get(PAGE_URL)
         time.sleep(5)
