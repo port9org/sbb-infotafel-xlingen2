@@ -2,12 +2,14 @@
 """
 Capture loop for SBB Infotafel.
 
-1. Fetch all API data in Python (fast, no browser network overhead).
-2. Write data.json atomically so the page can load it instantly.
-3. Call Chromium CLI to screenshot the page at 800×480.
-4. Sync to the top of the next minute and repeat.
+1. Fetch all API data in Python → write data.json atomically.
+2. Launch Chromium headless and take a screenshot via Chrome DevTools
+   Protocol (CDP) — works with Chromium 112+ where --screenshot was removed.
+3. Sync to :55 of each minute so the screenshot lands after the minute
+   boundary and the displayed clock is always accurate.
 """
 
+import base64
 import json
 import os
 import shutil
@@ -18,12 +20,16 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import websocket  # python3-websocket (apt install python3-websocket)
+
 SERVE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE     = os.path.join(SERVE_DIR, 'data.json')
 SCREENSHOT    = os.path.join(SERVE_DIR, 'sbb.png')
 PAGE_URL      = 'http://localhost:8080/'
+DEBUG_PORT    = 9222
 TRAIN_STATION = '8506131'
 BUS_STATION   = '8581697'
+WIDTH, HEIGHT = 800, 480
 
 
 def find_chromium():
@@ -36,7 +42,7 @@ def find_chromium():
         found = shutil.which(candidate)
         if found:
             return found
-    raise RuntimeError('Chromium not found — install with: sudo apt install chromium-browser')
+    raise RuntimeError('Chromium not found — install: sudo apt install chromium-browser')
 
 
 def now_dt():
@@ -52,15 +58,8 @@ def api_get(url):
 def fetch_all():
     dt = urllib.parse.quote(now_dt())
     board_base = 'https://transport.opendata.ch/v1/stationboard'
-
-    trains = api_get(
-        board_base + '?station=' + TRAIN_STATION +
-        '&limit=40&passlist=1&datetime=' + dt
-    )
-    buses = api_get(
-        board_base + '?station=' + BUS_STATION +
-        '&limit=8&passlist=1&datetime=' + dt
-    )
+    trains = api_get(board_base + '?station=' + TRAIN_STATION + '&limit=40&passlist=1&datetime=' + dt)
+    buses  = api_get(board_base + '?station=' + BUS_STATION   + '&limit=8&passlist=1&datetime='  + dt)
     weather = api_get(
         'https://api.open-meteo.com/v1/forecast'
         '?latitude=47.6465&longitude=9.1764'
@@ -81,13 +80,8 @@ def fetch_all():
         '&current=alder_pollen,birch_pollen,grass_pollen,'
         'mugwort_pollen,olive_pollen,ragweed_pollen'
     )
-    return {
-        'trains': trains,
-        'buses': buses,
-        'weather': weather,
-        'zurich_rain': zurich_rain,
-        'pollen': pollen,
-    }
+    return {'trains': trains, 'buses': buses, 'weather': weather,
+            'zurich_rain': zurich_rain, 'pollen': pollen}
 
 
 def write_data(data):
@@ -97,23 +91,80 @@ def write_data(data):
     shutil.move(tmp, DATA_FILE)
 
 
+def cdp_cmd(ws_conn, method, params=None, _id=[0]):
+    _id[0] += 1
+    mid = _id[0]
+    ws_conn.send(json.dumps({'id': mid, 'method': method, 'params': params or {}}))
+    while True:
+        msg = json.loads(ws_conn.recv())
+        if msg.get('id') == mid:
+            if 'error' in msg:
+                raise RuntimeError(f'CDP {method}: {msg["error"]}')
+            return msg.get('result', {})
+
+
 def capture(chromium):
-    subprocess.run(
-        [
-            chromium,
-            '--headless',
-            '--no-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--screenshot=' + SCREENSHOT,
-            '--window-size=800,480',
-            '--virtual-time-budget=4000',
-            PAGE_URL,
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        timeout=40,
+    # Kill any stale debug instance on this port
+    subprocess.run(['pkill', '-f', f'remote-debugging-port={DEBUG_PORT}'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.5)
+
+    proc = subprocess.Popen(
+        [chromium, '--headless', '--no-sandbox', '--disable-dev-shm-usage',
+         '--disable-gpu', f'--remote-debugging-port={DEBUG_PORT}',
+         f'--window-size={WIDTH},{HEIGHT}', '--hide-scrollbars', 'about:blank'],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
+
+    try:
+        # Wait for DevTools to be ready (up to 20s on slow Pi)
+        ws_url = None
+        for _ in range(40):
+            try:
+                res = urllib.request.urlopen(
+                    f'http://localhost:{DEBUG_PORT}/json/list', timeout=1)
+                targets = json.loads(res.read())
+                if targets:
+                    ws_url = targets[0]['webSocketDebuggerUrl']
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
+
+        if not ws_url:
+            raise RuntimeError('Chrome DevTools did not start')
+
+        ws_conn = websocket.create_connection(ws_url, timeout=30)
+        try:
+            cdp_cmd(ws_conn, 'Emulation.setDeviceMetricsOverride', {
+                'width': WIDTH, 'height': HEIGHT,
+                'deviceScaleFactor': 1, 'mobile': False,
+            })
+            cdp_cmd(ws_conn, 'Page.navigate', {'url': PAGE_URL})
+
+            # Wait for data.json load + DOM render.
+            # data.json is local so this is fast; 5s is generous for Pi Zero 2W.
+            time.sleep(5)
+
+            result = cdp_cmd(ws_conn, 'Page.captureScreenshot', {
+                'format': 'png',
+                'clip': {'x': 0, 'y': 0, 'width': WIDTH, 'height': HEIGHT, 'scale': 1},
+            })
+        finally:
+            ws_conn.close()
+
+        tmp = SCREENSHOT + '.tmp'
+        with open(tmp, 'wb') as f:
+            f.write(base64.b64decode(result['data']))
+        shutil.move(tmp, SCREENSHOT)
+
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
 
 
 def main():
@@ -136,13 +187,11 @@ def main():
 
         except urllib.error.URLError as e:
             print(f'[{time.strftime("%H:%M:%S")}] Network error: {e}', flush=True)
-        except subprocess.TimeoutExpired:
-            print(f'[{time.strftime("%H:%M:%S")}] Chromium timed out', flush=True)
         except Exception as e:
             print(f'[{time.strftime("%H:%M:%S")}] Error: {e}', flush=True)
 
-        # Sync to :55 of the current minute so the screenshot is taken
-        # right after the next minute boundary, keeping the clock accurate.
+        # Sync to :55 of the current minute so the screenshot lands after
+        # the next minute boundary, keeping the displayed clock accurate.
         secs = time.time() % 60
         sleep_s = (55 - secs) if secs <= 55 else (115 - secs)
         time.sleep(sleep_s)

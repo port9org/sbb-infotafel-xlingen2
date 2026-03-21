@@ -9,7 +9,7 @@ echo "=== SBB Infotafel install ==="
 # ── Dependencies ─────────────────────────────────────────────
 echo "Installing system packages..."
 sudo apt-get update -q
-sudo apt-get install -y chromium-browser python3-pil
+sudo apt-get install -y chromium-browser python3-pil python3-websocket
 
 # ── Nightly reboot at 03:00 ──────────────────────────────────
 echo "Setting up nightly reboot at 03:00..."
