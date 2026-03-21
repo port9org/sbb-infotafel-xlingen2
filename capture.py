@@ -126,7 +126,8 @@ def capture(chromium):
                     f'http://localhost:{DEBUG_PORT}/json/list', timeout=1)
                 targets = json.loads(res.read())
                 if targets:
-                    ws_url = targets[0]['webSocketDebuggerUrl']
+                    ws_url = targets[0]['webSocketDebuggerUrl'].replace(
+                        'localhost', '127.0.0.1')
                     break
             except Exception:
                 pass
