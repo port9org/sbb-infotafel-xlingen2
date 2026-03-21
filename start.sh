@@ -14,6 +14,8 @@ pkill -f "python3.*display_infotafel"  || true
 pkill -f "chromium.*--headless"        || true
 sleep 1
 
+rm -f /tmp/http.log /tmp/capture.log /tmp/display.log
+
 echo "1. Starting file server on :8080..."
 nohup python3 -m http.server 8080 </dev/null >/tmp/http.log 2>&1 &
 
