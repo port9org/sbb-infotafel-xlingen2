@@ -123,7 +123,7 @@ def capture(chromium):
         for _ in range(40):
             try:
                 res = urllib.request.urlopen(
-                    f'http://localhost:{DEBUG_PORT}/json/list', timeout=1)
+                    f'http://127.0.0.1:{DEBUG_PORT}/json/list', timeout=1)
                 targets = json.loads(res.read())
                 if targets:
                     ws_url = targets[0]['webSocketDebuggerUrl'].replace(
@@ -136,6 +136,7 @@ def capture(chromium):
         if not ws_url:
             raise RuntimeError('Chrome DevTools did not start')
 
+        print(f'  ws_url: {ws_url}', flush=True)
         ws_conn = websocket.create_connection(ws_url, timeout=30)
         try:
             cdp_cmd(ws_conn, 'Emulation.setDeviceMetricsOverride', {
