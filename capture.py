@@ -3,25 +3,20 @@
 Capture loop for SBB Infotafel.
 
 1. Fetch all API data in Python → write data.json atomically.
-2. Launch Chromium headless and take a screenshot via Chrome DevTools
-   Protocol (CDP) — works with Chromium 112+ where --screenshot was removed.
+2. Launch Chromium with --headless=old --screenshot to capture 800×480 PNG.
 3. Sync to :55 of each minute so the screenshot lands after the minute
    boundary and the displayed clock is always accurate.
 """
 
-import base64
 import json
 import os
 import shutil
-import socket
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-
-import websocket  # python3-websocket (apt install python3-websocket)
 
 SERVE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE     = os.path.join(SERVE_DIR, 'data.json')
@@ -91,102 +86,18 @@ def write_data(data):
     shutil.move(tmp, DATA_FILE)
 
 
-def cdp_cmd(ws_conn, method, params=None, _id=[0]):
-    _id[0] += 1
-    mid = _id[0]
-    ws_conn.send(json.dumps({'id': mid, 'method': method, 'params': params or {}}))
-    while True:
-        msg = json.loads(ws_conn.recv())
-        if msg.get('id') == mid:
-            if 'error' in msg:
-                raise RuntimeError(f'CDP {method}: {msg["error"]}')
-            return msg.get('result', {})
-
-
-def _free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('127.0.0.1', 0))
-        return s.getsockname()[1]
-
 
 def capture(chromium):
-    # Kill any stale headless Chromium from a previous session
-    subprocess.run(['pkill', '-f', 'chromium.*--headless'],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(0.5)
-
-    debug_port = _free_port()
-
-    proc = subprocess.Popen(
-        [chromium, '--headless', '--no-sandbox', '--disable-dev-shm-usage',
-         '--disable-gpu', f'--remote-debugging-port={debug_port}',
-         '--remote-allow-origins=*',
-         f'--window-size={WIDTH},{HEIGHT}', '--hide-scrollbars', 'about:blank'],
+    # --headless=old supports --screenshot directly (no CDP/WebSocket needed)
+    tmp = SCREENSHOT + '.tmp'
+    subprocess.run(
+        [chromium, '--headless=old', '--no-sandbox', '--disable-dev-shm-usage',
+         '--disable-gpu', f'--window-size={WIDTH},{HEIGHT}', '--hide-scrollbars',
+         f'--screenshot={tmp}', PAGE_URL],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        timeout=60, check=True,
     )
-
-    try:
-        # Wait for DevTools to be ready (up to 20s)
-        ws_url = None
-        for _ in range(40):
-            try:
-                res = urllib.request.urlopen(
-                    f'http://127.0.0.1:{debug_port}/json/list', timeout=1)
-                targets = json.loads(res.read())
-                if targets:
-                    ws_url = targets[0]['webSocketDebuggerUrl'].replace(
-                        'localhost', '127.0.0.1')
-                    break
-            except Exception:
-                pass
-            time.sleep(0.5)
-
-        if not ws_url:
-            raise RuntimeError('Chrome DevTools did not start')
-
-        print(f'  ws_url: {ws_url}', flush=True)
-        print(f'  chromium alive: {proc.poll() is None}', flush=True)
-
-        # Verify TCP reachability before websocket upgrade
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ts:
-            ts.settimeout(5)
-            try:
-                ts.connect(('127.0.0.1', debug_port))
-                print(f'  TCP port {debug_port}: reachable', flush=True)
-            except Exception as te:
-                print(f'  TCP port {debug_port}: FAILED — {te}', flush=True)
-
-        ws_conn = websocket.create_connection(ws_url, timeout=30)
-        try:
-            cdp_cmd(ws_conn, 'Emulation.setDeviceMetricsOverride', {
-                'width': WIDTH, 'height': HEIGHT,
-                'deviceScaleFactor': 1, 'mobile': False,
-            })
-            cdp_cmd(ws_conn, 'Page.navigate', {'url': PAGE_URL})
-
-            # Wait for data.json load + DOM render.
-            # data.json is local so this is fast; 5s is generous for Pi Zero 2W.
-            time.sleep(5)
-
-            result = cdp_cmd(ws_conn, 'Page.captureScreenshot', {
-                'format': 'png',
-                'clip': {'x': 0, 'y': 0, 'width': WIDTH, 'height': HEIGHT, 'scale': 1},
-            })
-        finally:
-            ws_conn.close()
-
-        tmp = SCREENSHOT + '.tmp'
-        with open(tmp, 'wb') as f:
-            f.write(base64.b64decode(result['data']))
-        shutil.move(tmp, SCREENSHOT)
-
-    finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
+    shutil.move(tmp, SCREENSHOT)
 
 
 def main():
