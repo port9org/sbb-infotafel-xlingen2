@@ -13,6 +13,7 @@ import base64
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -26,7 +27,6 @@ SERVE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE     = os.path.join(SERVE_DIR, 'data.json')
 SCREENSHOT    = os.path.join(SERVE_DIR, 'sbb.png')
 PAGE_URL      = 'http://127.0.0.1:8080/'
-DEBUG_PORT    = 9222
 TRAIN_STATION = '8506131'
 BUS_STATION   = '8581697'
 WIDTH, HEIGHT = 800, 480
@@ -103,27 +103,30 @@ def cdp_cmd(ws_conn, method, params=None, _id=[0]):
             return msg.get('result', {})
 
 
+def _free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('127.0.0.1', 0))
+        return s.getsockname()[1]
+
+
 def capture(chromium):
-    # Kill any stale debug instance on this port
-    subprocess.run(['pkill', '-f', f'remote-debugging-port={DEBUG_PORT}'],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(0.5)
+    debug_port = _free_port()
 
     proc = subprocess.Popen(
         [chromium, '--headless', '--no-sandbox', '--disable-dev-shm-usage',
-         '--disable-gpu', f'--remote-debugging-port={DEBUG_PORT}',
+         '--disable-gpu', f'--remote-debugging-port={debug_port}',
          '--remote-allow-origins=*',
          f'--window-size={WIDTH},{HEIGHT}', '--hide-scrollbars', 'about:blank'],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
     try:
-        # Wait for DevTools to be ready (up to 20s on slow Pi)
+        # Wait for DevTools to be ready (up to 20s)
         ws_url = None
         for _ in range(40):
             try:
                 res = urllib.request.urlopen(
-                    f'http://127.0.0.1:{DEBUG_PORT}/json/list', timeout=1)
+                    f'http://127.0.0.1:{debug_port}/json/list', timeout=1)
                 targets = json.loads(res.read())
                 if targets:
                     ws_url = targets[0]['webSocketDebuggerUrl'].replace(
