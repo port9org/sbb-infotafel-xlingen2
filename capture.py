@@ -25,7 +25,7 @@ import websocket  # python3-websocket (apt install python3-websocket)
 SERVE_DIR     = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE     = os.path.join(SERVE_DIR, 'data.json')
 SCREENSHOT    = os.path.join(SERVE_DIR, 'sbb.png')
-PAGE_URL      = 'http://localhost:8080/'
+PAGE_URL      = 'http://127.0.0.1:8080/'
 DEBUG_PORT    = 9222
 TRAIN_STATION = '8506131'
 BUS_STATION   = '8581697'
