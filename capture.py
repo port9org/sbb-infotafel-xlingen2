@@ -112,6 +112,7 @@ def capture(chromium):
     proc = subprocess.Popen(
         [chromium, '--headless', '--no-sandbox', '--disable-dev-shm-usage',
          '--disable-gpu', f'--remote-debugging-port={DEBUG_PORT}',
+         '--remote-allow-origins=*',
          f'--window-size={WIDTH},{HEIGHT}', '--hide-scrollbars', 'about:blank'],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
