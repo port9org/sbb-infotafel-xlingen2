@@ -19,7 +19,7 @@ echo "  → /etc/cron.d/sbb-infotafel-reboot written"
 
 # ── Autostart on boot ────────────────────────────────────────
 echo "Setting up autostart..."
-CRON_LINE="@reboot sleep 15 && ${REPO_DIR}/start.sh"
+CRON_LINE="@reboot sleep 15 && sudo ${REPO_DIR}/start.sh"
 ( crontab -l 2>/dev/null | grep -v "sbb-infotafel"; echo "# sbb-infotafel autostart"; echo "${CRON_LINE}" ) | crontab -
 echo "  → @reboot entry added to user crontab"
 
