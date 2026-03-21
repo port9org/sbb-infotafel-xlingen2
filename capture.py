@@ -110,6 +110,11 @@ def _free_port():
 
 
 def capture(chromium):
+    # Kill any stale headless Chromium from a previous session
+    subprocess.run(['sudo', 'pkill', '-f', 'chromium.*--headless'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.5)
+
     debug_port = _free_port()
 
     proc = subprocess.Popen(
