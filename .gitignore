@@ -1,0 +1,7 @@
+data.json
+data.json.tmp
+sbb.png
+__pycache__/
+*.pyc
+*.log
+.DS_Store

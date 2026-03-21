@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>SBB Infotafel Kreuzlingen</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="board">
+    <header>
+      <div class="time-block">
+        <span id="clock" class="clock"></span>
+        <div class="date-block">
+          <span id="kw-line"></span>
+          <span id="date-line"></span>
+        </div>
+      </div>
+      <div id="weather-block" class="weather-block"></div>
+      <div id="forecast-block" class="forecast-block"></div>
+    </header>
+
+    <div class="boards">
+      <div class="trains-col">
+        <div id="trains-list" class="dep-list"></div>
+        <div id="zrh-overlay" class="zrh-overlay hidden"></div>
+      </div>
+      <div class="buses-col">
+        <div id="buses-list" class="dep-list"></div>
+      </div>
+      <div id="pollen-overlay" class="pollen-overlay hidden">
+        <span class="pollen-label">Pollenflug</span>
+        <div id="pollen-pills" class="pollen-pills"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
