@@ -87,6 +87,10 @@ def capture():
     chromedriver = shutil.which('chromedriver') or '/usr/bin/chromedriver'
     driver = webdriver.Chrome(service=Service(chromedriver), options=options)
     try:
+        driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+            'width': WIDTH, 'height': HEIGHT,
+            'deviceScaleFactor': 1, 'mobile': False,
+        })
         driver.get(PAGE_URL)
         time.sleep(5)
         tmp = SCREENSHOT + '.tmp'
