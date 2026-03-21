@@ -145,6 +145,17 @@ def capture(chromium):
             raise RuntimeError('Chrome DevTools did not start')
 
         print(f'  ws_url: {ws_url}', flush=True)
+        print(f'  chromium alive: {proc.poll() is None}', flush=True)
+
+        # Verify TCP reachability before websocket upgrade
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as ts:
+            ts.settimeout(5)
+            try:
+                ts.connect(('127.0.0.1', debug_port))
+                print(f'  TCP port {debug_port}: reachable', flush=True)
+            except Exception as te:
+                print(f'  TCP port {debug_port}: FAILED — {te}', flush=True)
+
         ws_conn = websocket.create_connection(ws_url, timeout=30)
         try:
             cdp_cmd(ws_conn, 'Emulation.setDeviceMetricsOverride', {
