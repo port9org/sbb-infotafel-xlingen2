@@ -149,12 +149,9 @@ def main():
                     dot_count = 0
                     tick = 0
                     dot_x = DOT_X
+                    t_start = time.monotonic()
 
-                    while True:
-                        sec = time.localtime().tm_sec
-                        if 8 <= sec <= 16:
-                            break
-
+                    while time.monotonic() - t_start < 50:
                         draw = ImageDraw.Draw(img)
 
                         # Every 5 ticks (10s), solidify the blinking dot
@@ -165,12 +162,13 @@ def main():
                                  dot_x + DOT_SIZE, py + DOT_SIZE],
                                 fill=0)
                             dot_count += 1
+                            print(f'[{time.strftime("%H:%M:%S")}] '
+                                  f'Dot {dot_count} permanent',
+                                  flush=True)
 
                         blink_y = 2 + dot_count * DOT_SPACING
                         if blink_y > DOT_MAX_Y:
-                            time.sleep(2)
-                            tick += 1
-                            continue
+                            break
 
                         # Toggle blink: ON on even ticks, OFF on odd
                         fill = 0 if tick % 2 == 0 else 255
@@ -185,6 +183,9 @@ def main():
                             dot_x, 0,
                             dot_x + 8,
                             DOT_MAX_Y + DOT_SIZE)
+                        print(f'[{time.strftime("%H:%M:%S")}] '
+                              f'Blink {"ON" if fill == 0 else "OFF"}',
+                              flush=True)
 
                         tick += 1
                         time.sleep(2)
