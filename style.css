@@ -64,29 +64,31 @@ header {
 }
 
 .wx-icon { display: flex; align-items: center; flex-shrink: 0; }
-.wx-temp { font-size: 24px; font-weight: 700; }
+.wx-temp { font-size: 28px; font-weight: 700; }
 .wx-feels { font-size: 14px; color: #444; }
 .wx-pipe { color: #aaa; margin: 0 1px; }
 
-/* ── Forecast (right column) ────────────────────────────────── */
+/* ── Forecast (right column, 2×2 grid) ────────────────────── */
 .forecast-block {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 0 8px;
+  justify-items: center;
+  padding: 2px 4px;
+  gap: 0 8px;
 }
 
 .fc-day {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   white-space: nowrap;
 }
 
-.fc-name { font-weight: 800; font-size: 16px; }
+.fc-name { font-weight: 800; font-size: 14px; }
 .fc-icon { display: flex; align-items: center; }
-.fc-temps { font-size: 13px; font-weight: 600; }
+.fc-temps { font-size: 14px; font-weight: 700; }
 
 /* ── Boards container ───────────────────────────────────────── */
 .boards {

@@ -221,7 +221,7 @@ function renderForecast(w) {
   if (!w || !w.daily || w.daily.time.length < 2) { el.innerHTML = ''; return; }
   const day = w.daily;
   let html = '';
-  for (let i = 1; i <= 3 && i < day.time.length; i++) {
+  for (let i = 1; i <= 4 && i < day.time.length; i++) {
     const d   = new Date(day.time[i] + 'T12:00:00');
     const min = Math.round(day.temperature_2m_min[i]);
     const max = Math.round(day.temperature_2m_max[i]);
