@@ -3,7 +3,7 @@
 Capture loop for SBB Infotafel.
 
 1. Fetch all API data in Python → write data.json atomically.
-2. Screenshot via Selenium + chromedriver (handles CDP internally).
+2. Screenshot via Selenium + chromedriver (keeps browser alive between cycles).
 3. Sync to :55 of each minute so the screenshot lands after the minute
    boundary and the displayed clock is always accurate.
 """
@@ -34,7 +34,8 @@ def now_dt():
 
 
 def api_get(url):
-    req = urllib.request.Request(url, headers={'User-Agent': 'sbb-infotafel/2.0'})
+    req = urllib.request.Request(
+        url, headers={'User-Agent': 'sbb-infotafel/2.0'})
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read().decode('utf-8'))
 
@@ -42,12 +43,17 @@ def api_get(url):
 def fetch_all():
     dt = urllib.parse.quote(now_dt())
     board_base = 'https://transport.opendata.ch/v1/stationboard'
-    trains = api_get(board_base + '?station=' + TRAIN_STATION + '&limit=40&passlist=1&datetime=' + dt)
-    buses  = api_get(board_base + '?station=' + BUS_STATION   + '&limit=8&passlist=1&datetime='  + dt)
+    trains = api_get(
+        board_base + '?station=' + TRAIN_STATION
+        + '&limit=40&passlist=1&datetime=' + dt)
+    buses = api_get(
+        board_base + '?station=' + BUS_STATION
+        + '&limit=8&passlist=1&datetime=' + dt)
     weather = api_get(
         'https://api.open-meteo.com/v1/forecast'
         '?latitude=47.6465&longitude=9.1764'
-        '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m'
+        '&current=temperature_2m,apparent_temperature,'
+        'weather_code,wind_speed_10m'
         '&daily=weather_code,temperature_2m_max,temperature_2m_min,'
         'precipitation_sum,precipitation_probability_max'
         '&timezone=Europe%2FBerlin'
@@ -75,7 +81,7 @@ def write_data(data):
     shutil.move(tmp, DATA_FILE)
 
 
-def capture():
+def create_driver():
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
@@ -90,44 +96,63 @@ def capture():
     options.add_argument('--hide-scrollbars')
 
     chromedriver = shutil.which('chromedriver') or '/usr/bin/chromedriver'
-    driver = webdriver.Chrome(service=Service(chromedriver), options=options)
-    try:
-        driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
-            'width': WIDTH, 'height': HEIGHT,
-            'deviceScaleFactor': 1, 'mobile': False,
-        })
-        driver.get(PAGE_URL)
-        time.sleep(15)
-        tmp = SCREENSHOT + '.tmp'
-        driver.save_screenshot(tmp)
-        shutil.move(tmp, SCREENSHOT)
-    finally:
-        driver.quit()
+    driver = webdriver.Chrome(
+        service=Service(chromedriver), options=options)
+    driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+        'width': WIDTH, 'height': HEIGHT,
+        'deviceScaleFactor': 1, 'mobile': False,
+    })
+    driver.get(PAGE_URL)
+    time.sleep(10)
+    print('Browser started and page loaded.', flush=True)
+    return driver
 
 
 def main():
     print(f'Screenshot: {SCREENSHOT}', flush=True)
 
+    driver = None
+
     while True:
         t0 = time.monotonic()
         try:
-            print(f'[{time.strftime("%H:%M:%S")}] Fetching data...', flush=True)
+            print(f'[{time.strftime("%H:%M:%S")}] Fetching data...',
+                  flush=True)
             data = fetch_all()
             write_data(data)
 
-            print(f'[{time.strftime("%H:%M:%S")}] Capturing screenshot...', flush=True)
-            capture()
+            print(f'[{time.strftime("%H:%M:%S")}] Capturing screenshot...',
+                  flush=True)
+
+            if driver is None:
+                driver = create_driver()
+            else:
+                driver.refresh()
+                time.sleep(5)
+
+            tmp = SCREENSHOT + '.tmp'
+            driver.save_screenshot(tmp)
+            shutil.move(tmp, SCREENSHOT)
 
             elapsed = time.monotonic() - t0
-            print(f'[{time.strftime("%H:%M:%S")}] Done ({elapsed:.1f}s)', flush=True)
+            print(f'[{time.strftime("%H:%M:%S")}] Done ({elapsed:.1f}s)',
+                  flush=True)
 
         except urllib.error.URLError as e:
-            print(f'[{time.strftime("%H:%M:%S")}] Network error: {e}', flush=True)
+            print(f'[{time.strftime("%H:%M:%S")}] Network error: {e}',
+                  flush=True)
         except Exception as e:
-            print(f'[{time.strftime("%H:%M:%S")}] Error: {e}', flush=True)
+            print(f'[{time.strftime("%H:%M:%S")}] Error: {e}',
+                  flush=True)
+            if driver:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+                driver = None
 
-        # Sync to :55 of the current minute so the screenshot lands after
-        # the next minute boundary, keeping the displayed clock accurate.
+        # Sync to :55 of the current minute so the screenshot lands
+        # after the next minute boundary, keeping the clock accurate.
         secs = time.time() % 60
         sleep_s = (55 - secs) if secs <= 55 else (115 - secs)
         time.sleep(sleep_s)
