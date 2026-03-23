@@ -27,9 +27,9 @@ IMAGE_URL    = 'http://localhost:8080/sbb.png'
 LOCAL_IMAGE  = '/tmp/sbb_display.png'
 BACKEND_NODE = '1.1.1.1'
 
-DOT_X       = -10   # offset from right edge
-DOT_SIZE    = 4
-DOT_SPACING = 7
+DOT_X       = 784   # must be multiple of 8 for e-paper partial refresh
+DOT_SIZE    = 6
+DOT_SPACING = 10
 DOT_MAX_Y   = 60    # stay within header area
 
 
@@ -148,7 +148,7 @@ def main():
                 try:
                     dot_count = 0
                     tick = 0
-                    dot_x = epd.width + DOT_X
+                    dot_x = DOT_X
 
                     while True:
                         sec = time.localtime().tm_sec
@@ -182,9 +182,9 @@ def main():
                         epd.init_part()
                         epd.display_Partial(
                             epd.getbuffer(img),
-                            dot_x, blink_y,
-                            dot_x + DOT_SIZE + 1,
-                            blink_y + DOT_SIZE + 1)
+                            dot_x, 0,
+                            dot_x + 8,
+                            DOT_MAX_Y + DOT_SIZE)
 
                         tick += 1
                         time.sleep(2)
