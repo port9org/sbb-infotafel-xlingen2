@@ -31,17 +31,22 @@ echo "0 3 * * * root /sbin/reboot" | sudo tee /etc/cron.d/sbb-infotafel-reboot >
 sudo chmod 644 /etc/cron.d/sbb-infotafel-reboot
 echo "  → /etc/cron.d/sbb-infotafel-reboot written"
 
-# ── Autostart on boot + watchdog ─────────────────────────────
-echo "Setting up autostart and watchdog..."
+# ── Autostart on boot ────────────────────────────────────────
+echo "Setting up autostart..."
 chmod +x "${REPO_DIR}/start.sh" "${REPO_DIR}/watchdog.sh"
 (
   crontab -l 2>/dev/null | grep -v "sbb-infotafel"
   echo "# sbb-infotafel autostart"
   echo "@reboot sleep 15 && sudo ${REPO_DIR}/start.sh"
-  echo "# sbb-infotafel watchdog (every minute)"
-  echo "* * * * * root ${REPO_DIR}/watchdog.sh >>/tmp/watchdog.log 2>&1"
 ) | crontab -
-echo "  → @reboot + watchdog cron entries added"
+echo "  → @reboot cron entry added"
+
+# ── Watchdog (every minute) ──────────────────────────────────
+echo "Setting up watchdog..."
+echo "* * * * * root ${REPO_DIR}/watchdog.sh >>/tmp/watchdog.log 2>&1" \
+  | sudo tee /etc/cron.d/sbb-infotafel-watchdog > /dev/null
+sudo chmod 644 /etc/cron.d/sbb-infotafel-watchdog
+echo "  → /etc/cron.d/sbb-infotafel-watchdog written"
 
 echo ""
 echo "Done. Reboot the Pi to verify autostart."
