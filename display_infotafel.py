@@ -145,29 +145,33 @@ def main():
                       flush=True)
 
             if has_partial:
-                dot_count = 0
-                dot_x = epd.width + DOT_X
+                try:
+                    dot_count = 0
+                    dot_x = epd.width + DOT_X
 
-                while True:
-                    time.sleep(10)
-                    sec = time.localtime().tm_sec
-                    if 10 <= sec <= 14:
-                        break
+                    while True:
+                        time.sleep(10)
+                        sec = time.localtime().tm_sec
+                        if 10 <= sec <= 14:
+                            break
 
-                    dot_count += 1
-                    y = 2 + (dot_count - 1) * DOT_SPACING
-                    if y > DOT_MAX_Y:
-                        break
+                        dot_count += 1
+                        y = 2 + (dot_count - 1) * DOT_SPACING
+                        if y > DOT_MAX_Y:
+                            break
 
-                    draw = ImageDraw.Draw(img)
-                    draw.rectangle(
-                        [dot_x, y, dot_x + DOT_SIZE, y + DOT_SIZE],
-                        fill=0)
+                        draw = ImageDraw.Draw(img)
+                        draw.rectangle(
+                            [dot_x, y, dot_x + DOT_SIZE, y + DOT_SIZE],
+                            fill=0)
 
-                    epd.init_part()
-                    epd.display_Partial(epd.getbuffer(img))
+                        epd.init_part()
+                        epd.display_Partial(epd.getbuffer(img))
+                        print(f'[{time.strftime("%H:%M:%S")}] '
+                              f'Keepalive dot {dot_count}', flush=True)
+                except Exception as e:
                     print(f'[{time.strftime("%H:%M:%S")}] '
-                          f'Keepalive dot {dot_count}', flush=True)
+                          f'Partial refresh failed: {e}', flush=True)
 
             if epd:
                 epd.sleep()
