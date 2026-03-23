@@ -146,49 +146,18 @@ def main():
 
             if has_partial:
                 try:
-                    dot_count = 0
-                    tick = 0
-                    dot_x = DOT_X
-                    t_start = time.monotonic()
-
-                    while time.monotonic() - t_start < 50:
-                        draw = ImageDraw.Draw(img)
-
-                        # Every 5 ticks (10s), solidify the blinking dot
-                        if tick > 0 and tick % 5 == 0:
-                            py = 2 + dot_count * DOT_SPACING
-                            draw.rectangle(
-                                [dot_x, py,
-                                 dot_x + DOT_SIZE, py + DOT_SIZE],
-                                fill=0)
-                            dot_count += 1
-                            print(f'[{time.strftime("%H:%M:%S")}] '
-                                  f'Dot {dot_count} permanent',
-                                  flush=True)
-
-                        blink_y = 2 + dot_count * DOT_SPACING
-                        if blink_y > DOT_MAX_Y:
-                            break
-
-                        # Toggle blink: ON on even ticks, OFF on odd
-                        fill = 0 if tick % 2 == 0 else 255
-                        draw.rectangle(
-                            [dot_x, blink_y,
-                             dot_x + DOT_SIZE, blink_y + DOT_SIZE],
-                            fill=fill)
-
-                        epd.init_part()
-                        epd.display_Partial(
-                            epd.getbuffer(img),
-                            dot_x, 0,
-                            dot_x + 8,
-                            DOT_MAX_Y + DOT_SIZE)
-                        print(f'[{time.strftime("%H:%M:%S")}] '
-                              f'Blink {"ON" if fill == 0 else "OFF"}',
-                              flush=True)
-
-                        tick += 1
-                        time.sleep(2)
+                    # TEST: draw a big black square and full-screen partial refresh
+                    time.sleep(3)
+                    draw = ImageDraw.Draw(img)
+                    draw.rectangle([700, 5, 750, 55], fill=0)
+                    epd.init_part()
+                    epd.display_Partial(
+                        epd.getbuffer(img),
+                        0, 0, epd.width, epd.height)
+                    print(f'[{time.strftime("%H:%M:%S")}] '
+                          f'TEST: big square partial refresh done',
+                          flush=True)
+                    time.sleep(10)
                 except Exception as e:
                     print(f'[{time.strftime("%H:%M:%S")}] '
                           f'Partial refresh failed: {e}', flush=True)
