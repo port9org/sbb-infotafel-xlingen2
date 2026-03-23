@@ -66,8 +66,12 @@ header {
 
 .wx-icon { display: flex; align-items: center; flex-shrink: 0; }
 .wx-temp { font-size: 34px; font-weight: 700; }
-.wx-feels { font-size: 17px; color: #444; }
-.wx-pipe { color: #aaa; margin: 0 1px; }
+.wx-details {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  line-height: 1.4;
+}
 
 /* ── Forecast (right column, 2×2 grid) ────────────────────── */
 .forecast-block {
