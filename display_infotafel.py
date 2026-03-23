@@ -152,7 +152,7 @@ def main():
                     while True:
                         time.sleep(10)
                         sec = time.localtime().tm_sec
-                        if 10 <= sec <= 14:
+                        if 8 <= sec <= 16:
                             break
 
                         dot_count += 1
@@ -168,7 +168,9 @@ def main():
                         epd.init_part()
                         epd.display_Partial(
                             epd.getbuffer(img),
-                            0, 0, epd.width, epd.height)
+                            dot_x, y,
+                            dot_x + DOT_SIZE + 1,
+                            y + DOT_SIZE + 1)
                         print(f'[{time.strftime("%H:%M:%S")}] '
                               f'Keepalive dot {dot_count}', flush=True)
                 except Exception as e:
