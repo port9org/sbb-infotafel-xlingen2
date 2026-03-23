@@ -18,11 +18,12 @@ html, body {
 
 /* ── Header ─────────────────────────────────────────────────── */
 header {
-  height: 55px;
+  height: 66px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: stretch;
   border-bottom: 2px solid #000;
+  font-weight: 700;
 }
 
 .time-block {
@@ -93,7 +94,7 @@ header {
 /* ── Boards container ───────────────────────────────────────── */
 .boards {
   position: relative;
-  height: 425px;
+  height: 414px;
   padding: 0 4px;
 }
 
