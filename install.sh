@@ -9,6 +9,7 @@ echo "=== SBB Infotafel install ==="
 # ── Dependencies ─────────────────────────────────────────────
 echo "Installing system packages..."
 sudo apt-get update -q
+sudo apt-get install -y chromium chromium-driver python3-pil python3-selenium || \
 sudo apt-get install -y chromium-browser chromium-driver python3-pil python3-selenium
 
 # ── NTP time sync (every 10 minutes + on boot) ──────────────
