@@ -207,7 +207,7 @@ function renderWeather(w) {
   const wind  = Math.round(cur.wind_speed_10m);
   const rainP = day.precipitation_probability_max[0];
   el.innerHTML =
-    '<span class="wx-icon">' + wxIcon(cur.weather_code, 26) + '</span>' +
+    '<span class="wx-icon">' + wxIcon(cur.weather_code, 33) + '</span>' +
     '<span class="wx-temp">' + temp + '°</span>' +
     '<div class="wx-details">' +
       '<span>' + minT + '°–' + maxT + '° (' + feels + '°)</span>' +
