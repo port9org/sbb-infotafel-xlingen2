@@ -166,7 +166,9 @@ def main():
                             fill=0)
 
                         epd.init_part()
-                        epd.display_Partial(epd.getbuffer(img))
+                        epd.display_Partial(
+                            epd.getbuffer(img),
+                            0, 0, epd.width, epd.height)
                         print(f'[{time.strftime("%H:%M:%S")}] '
                               f'Keepalive dot {dot_count}', flush=True)
                 except Exception as e:
