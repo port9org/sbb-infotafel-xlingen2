@@ -240,6 +240,8 @@ function depRow(dep) {
   const delay     = stop.delay || 0;
   const plat      = stop.platform || '';
   const isIR      = dep.category === 'IR';
+  const depMin    = stop.departure ? new Date(stop.departure).getMinutes() : -1;
+  const highlight = isIR && depMin === 16;
   const via       = viaText(dep.passList);
   const pillCls   = 'cat-pill' + (isIR ? ' ir' : '');
   const icon      = isIR ? TRAIN_ICON : BUS_ICON;
@@ -252,7 +254,7 @@ function depRow(dep) {
   if (cancelled)
     badges += '<span class="badge cancelled">Ausfall</span>';
 
-  return '<div class="dep-row' + (cancelled ? ' cancelled' : '') + '">' +
+  return '<div class="dep-row' + (cancelled ? ' cancelled' : '') + (highlight ? ' highlight' : '') + '">' +
     '<span class="' + pillCls + '">' + dep.category + ' ' + dep.number + '</span>' +
     '<span class="transport-icon">' + icon + '</span>' +
     '<span class="dep-time">' + fmtTime(stop.departure) + '</span>' +

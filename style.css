@@ -152,6 +152,16 @@ header {
 
 .dep-row:last-child { border-bottom: none; }
 
+.dep-row.highlight {
+  background: #000;
+  color: #fff;
+}
+.dep-row.highlight .cat-pill.ir {
+  background: #fff;
+  color: #000;
+}
+.dep-row.highlight .dep-via { color: #ccc; }
+
 .dep-row.cancelled .dep-dest,
 .dep-row.cancelled .dep-time { text-decoration: line-through; opacity: 0.5; }
 
