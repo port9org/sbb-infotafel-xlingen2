@@ -35,7 +35,7 @@ header {
 }
 
 .clock {
-  font-size: 48px;
+  font-size: 58px;
   font-weight: 700;
   letter-spacing: -1.5px;
   line-height: 1;
@@ -65,7 +65,7 @@ header {
 }
 
 .wx-icon { display: flex; align-items: center; flex-shrink: 0; }
-.wx-temp { font-size: 43px; font-weight: 700; }
+.wx-temp { font-size: 52px; font-weight: 700; }
 .wx-details {
   display: flex;
   flex-direction: column;
