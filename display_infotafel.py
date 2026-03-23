@@ -147,32 +147,47 @@ def main():
             if has_partial:
                 try:
                     dot_count = 0
+                    tick = 0
                     dot_x = epd.width + DOT_X
 
                     while True:
-                        time.sleep(10)
                         sec = time.localtime().tm_sec
                         if 8 <= sec <= 16:
                             break
 
-                        dot_count += 1
-                        y = 2 + (dot_count - 1) * DOT_SPACING
-                        if y > DOT_MAX_Y:
-                            break
-
                         draw = ImageDraw.Draw(img)
+
+                        # Every 5 ticks (10s), solidify the blinking dot
+                        if tick > 0 and tick % 5 == 0:
+                            py = 2 + dot_count * DOT_SPACING
+                            draw.rectangle(
+                                [dot_x, py,
+                                 dot_x + DOT_SIZE, py + DOT_SIZE],
+                                fill=0)
+                            dot_count += 1
+
+                        blink_y = 2 + dot_count * DOT_SPACING
+                        if blink_y > DOT_MAX_Y:
+                            time.sleep(2)
+                            tick += 1
+                            continue
+
+                        # Toggle blink: ON on even ticks, OFF on odd
+                        fill = 0 if tick % 2 == 0 else 255
                         draw.rectangle(
-                            [dot_x, y, dot_x + DOT_SIZE, y + DOT_SIZE],
-                            fill=0)
+                            [dot_x, blink_y,
+                             dot_x + DOT_SIZE, blink_y + DOT_SIZE],
+                            fill=fill)
 
                         epd.init_part()
                         epd.display_Partial(
                             epd.getbuffer(img),
-                            dot_x, y,
+                            dot_x, blink_y,
                             dot_x + DOT_SIZE + 1,
-                            y + DOT_SIZE + 1)
-                        print(f'[{time.strftime("%H:%M:%S")}] '
-                              f'Keepalive dot {dot_count}', flush=True)
+                            blink_y + DOT_SIZE + 1)
+
+                        tick += 1
+                        time.sleep(2)
                 except Exception as e:
                     print(f'[{time.strftime("%H:%M:%S")}] '
                           f'Partial refresh failed: {e}', flush=True)
