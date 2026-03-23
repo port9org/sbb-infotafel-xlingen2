@@ -333,6 +333,15 @@ async function refresh() {
     pollen    = processPollen(results[4]);
   }
 
+  // TEST: simulate delays, platform changes, cancellations
+  if (trains && trains.stationboard) {
+    const b = trains.stationboard;
+    if (b[0] && b[0].stop) { b[0].stop.delay = 7; }
+    if (b[1] && b[1].stop) { b[1].stop.platform = '3!'; }
+    if (b[2] && b[2].stop) { b[2].stop.cancelled = true; }
+    if (b[3] && b[3].stop) { b[3].stop.delay = 12; b[3].stop.platform = '2!'; }
+  }
+
   renderTrains(trains);
   renderBuses(buses);
   renderWeather(weather);
