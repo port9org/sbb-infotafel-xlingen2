@@ -11,6 +11,19 @@ echo "Installing system packages..."
 sudo apt-get update -q
 sudo apt-get install -y chromium-browser chromium-driver python3-pil python3-selenium
 
+# ── NTP time sync (every 10 minutes + on boot) ──────────────
+echo "Configuring NTP time sync..."
+sudo timedatectl set-ntp true
+sudo mkdir -p /etc/systemd/timesyncd.conf.d
+cat << 'CONF' | sudo tee /etc/systemd/timesyncd.conf.d/frequent.conf > /dev/null
+[Time]
+NTP=pool.ntp.org
+PollIntervalMinSec=600
+PollIntervalMaxSec=600
+CONF
+sudo systemctl restart systemd-timesyncd
+echo "  → NTP syncs every 10 minutes + on boot"
+
 # ── Nightly reboot at 03:00 ──────────────────────────────────
 echo "Setting up nightly reboot at 03:00..."
 echo "0 3 * * * root /sbin/reboot" | sudo tee /etc/cron.d/sbb-infotafel-reboot > /dev/null
