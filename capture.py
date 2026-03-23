@@ -81,6 +81,11 @@ def capture():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-background-networking')
+    options.add_argument('--disable-sync')
+    options.add_argument('--disable-features=OnDeviceModel')
+    options.add_argument('--js-flags=--max-old-space-size=128')
     options.add_argument(f'--window-size={WIDTH},{HEIGHT}')
     options.add_argument('--hide-scrollbars')
 
@@ -92,7 +97,7 @@ def capture():
             'deviceScaleFactor': 1, 'mobile': False,
         })
         driver.get(PAGE_URL)
-        time.sleep(5)
+        time.sleep(15)
         tmp = SCREENSHOT + '.tmp'
         driver.save_screenshot(tmp)
         shutil.move(tmp, SCREENSHOT)
