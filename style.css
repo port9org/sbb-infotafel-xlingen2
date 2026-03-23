@@ -58,14 +58,14 @@ header {
   gap: 5px;
   padding: 0 6px;
   border-right: 2px solid #000;
-  font-size: 16px;
+  font-size: 19px;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .wx-icon { display: flex; align-items: center; flex-shrink: 0; }
-.wx-temp { font-size: 28px; font-weight: 700; }
-.wx-feels { font-size: 14px; color: #444; }
+.wx-temp { font-size: 34px; font-weight: 700; }
+.wx-feels { font-size: 17px; color: #444; }
 .wx-pipe { color: #aaa; margin: 0 1px; }
 
 /* ── Forecast (right column, 2×2 grid) ────────────────────── */
@@ -86,9 +86,9 @@ header {
   white-space: nowrap;
 }
 
-.fc-name { font-weight: 800; font-size: 14px; }
+.fc-name { font-weight: 800; font-size: 17px; }
 .fc-icon { display: flex; align-items: center; }
-.fc-temps { font-size: 14px; font-weight: 700; }
+.fc-temps { font-size: 17px; font-weight: 700; }
 
 /* ── Boards container ───────────────────────────────────────── */
 .boards {
