@@ -4,6 +4,7 @@ E-paper display driver for SBB Infotafel.
 
 Fetches sbb.png from the local capture server, converts to 1-bit,
 and pushes it to the Waveshare 7.5" V2 e-paper display.
+Between full refreshes, partial refresh adds keepalive dots every 10s.
 Draws a diagnostic screen on connection failure.
 """
 
@@ -18,17 +19,25 @@ sys.path.append('/home/ke/e-Paper/RaspberryPi_JetsonNano/python/lib')
 try:
     from waveshare_epd import epd7in5_V2
 except ImportError:
-    print('Warning: waveshare_epd not found — running in preview mode', flush=True)
+    print('Warning: waveshare_epd not found — running in preview mode',
+          flush=True)
     epd7in5_V2 = None
 
 IMAGE_URL    = 'http://localhost:8080/sbb.png'
 LOCAL_IMAGE  = '/tmp/sbb_display.png'
 BACKEND_NODE = '1.1.1.1'
 
+DOT_X       = -10   # offset from right edge
+DOT_SIZE    = 4
+DOT_SPACING = 7
+DOT_MAX_Y   = 60    # stay within header area
+
 
 def sys_cmd(cmd):
     try:
-        return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode().strip()
+        return subprocess.check_output(
+            cmd, shell=True, stderr=subprocess.DEVNULL
+        ).decode().strip()
     except Exception:
         return 'Unknown'
 
@@ -37,7 +46,8 @@ def ping_ok():
     try:
         return subprocess.call(
             'ping -c 1 -W 2 ' + BACKEND_NODE,
-            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            shell=True, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         ) == 0
     except Exception:
         return False
@@ -48,9 +58,15 @@ def draw_error_screen(epd, error_msg):
         img  = Image.new('1', (epd.width, epd.height), 255)
         draw = ImageDraw.Draw(img)
         try:
-            f_title = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', 36)
-            f_text  = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', 20)
-            f_mono  = ImageFont.truetype('/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf', 14)
+            f_title = ImageFont.truetype(
+                '/usr/share/fonts/truetype/liberation/'
+                'LiberationSans-Regular.ttf', 36)
+            f_text = ImageFont.truetype(
+                '/usr/share/fonts/truetype/liberation/'
+                'LiberationSans-Regular.ttf', 20)
+            f_mono = ImageFont.truetype(
+                '/usr/share/fonts/truetype/liberation/'
+                'LiberationMono-Regular.ttf', 14)
         except Exception:
             f_title = f_text = f_mono = ImageFont.load_default()
 
@@ -100,31 +116,66 @@ def main():
     else:
         epd = None
 
+    has_partial = epd and hasattr(epd, 'display_Partial')
+    print(f'Partial refresh: '
+          f'{"available" if has_partial else "not available"}',
+          flush=True)
+
     consecutive_errors = 0
 
     while True:
         try:
-            print(f'[{time.strftime("%H:%M:%S")}] Fetching {IMAGE_URL}...', flush=True)
+            print(f'[{time.strftime("%H:%M:%S")}] Fetching {IMAGE_URL}...',
+                  flush=True)
             urllib.request.urlretrieve(IMAGE_URL, LOCAL_IMAGE)
             consecutive_errors = 0
 
             img = Image.open(LOCAL_IMAGE)
             if epd and img.size != (epd.width, epd.height):
-                img = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
+                img = img.resize(
+                    (epd.width, epd.height), Image.Resampling.LANCZOS)
 
             if epd:
                 epd.init()
                 epd.display(epd.getbuffer(img))
-                epd.sleep()
-                print(f'[{time.strftime("%H:%M:%S")}] Displayed.', flush=True)
+                print(f'[{time.strftime("%H:%M:%S")}] Displayed.',
+                      flush=True)
             else:
-                print(f'[{time.strftime("%H:%M:%S")}] Preview mode — image loaded OK.', flush=True)
+                print(f'[{time.strftime("%H:%M:%S")}] Preview mode — OK.',
+                      flush=True)
 
-            # Sync to :12 of the next minute — capture starts at :55 and
-            # completes by ~:05-:08, so :12 guarantees a fresh image.
-            curr  = time.localtime().tm_sec
+            if has_partial:
+                dot_count = 0
+                dot_x = epd.width + DOT_X
+
+                while True:
+                    time.sleep(10)
+                    sec = time.localtime().tm_sec
+                    if 10 <= sec <= 14:
+                        break
+
+                    dot_count += 1
+                    y = 2 + (dot_count - 1) * DOT_SPACING
+                    if y > DOT_MAX_Y:
+                        break
+
+                    draw = ImageDraw.Draw(img)
+                    draw.rectangle(
+                        [dot_x, y, dot_x + DOT_SIZE, y + DOT_SIZE],
+                        fill=0)
+
+                    epd.init_Part()
+                    epd.display_Partial(epd.getbuffer(img))
+                    print(f'[{time.strftime("%H:%M:%S")}] '
+                          f'Keepalive dot {dot_count}', flush=True)
+
+            if epd:
+                epd.sleep()
+
+            # Sync to :12 of the next minute
+            curr = time.localtime().tm_sec
             delay = 12 - curr if curr <= 12 else 72 - curr
-            time.sleep(delay)
+            time.sleep(max(1, delay))
 
         except KeyboardInterrupt:
             print('Exiting...', flush=True)
