@@ -335,11 +335,11 @@ async function refresh() {
 
   // TEST: simulate delays, platform changes, cancellations
   if (trains && trains.stationboard) {
-    const b = trains.stationboard;
-    if (b[0] && b[0].stop) { b[0].stop.delay = 7; }
-    if (b[1] && b[1].stop) { b[1].stop.platform = '3!'; }
-    if (b[2] && b[2].stop) { b[2].stop.cancelled = true; }
-    if (b[3] && b[3].stop) { b[3].stop.delay = 12; b[3].stop.platform = '2!'; }
+    const irs = trains.stationboard.filter(function (d) { return d.category === 'IR'; });
+    if (irs[0] && irs[0].stop) { irs[0].stop.delay = 7; }
+    if (irs[1] && irs[1].stop) { irs[1].stop.platform = '3!'; }
+    if (irs[2] && irs[2].stop) { irs[2].stop.cancelled = true; }
+    if (irs[3] && irs[3].stop) { irs[3].stop.delay = 12; irs[3].stop.platform = '2!'; }
   }
 
   renderTrains(trains);
