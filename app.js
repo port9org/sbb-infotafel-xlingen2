@@ -333,15 +333,6 @@ async function refresh() {
     pollen    = processPollen(results[4]);
   }
 
-  // TEST: simulate delays, platform changes, cancellations
-  if (trains && trains.stationboard) {
-    const irs = trains.stationboard.filter(function (d) { return d.category === 'IR'; });
-    if (irs[0] && irs[0].stop) { irs[0].stop.delay = 7; }
-    if (irs[1] && irs[1].stop) { irs[1].stop.platform = '3!'; }
-    if (irs[2] && irs[2].stop) { irs[2].stop.cancelled = true; }
-    if (irs[3] && irs[3].stop) { irs[3].stop.delay = 12; irs[3].stop.platform = '2!'; }
-  }
-
   renderTrains(trains);
   renderBuses(buses);
   renderWeather(weather);
