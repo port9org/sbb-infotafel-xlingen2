@@ -164,7 +164,7 @@ def main():
                         [dot_x, y, dot_x + DOT_SIZE, y + DOT_SIZE],
                         fill=0)
 
-                    epd.init_Part()
+                    epd.init_part()
                     epd.display_Partial(epd.getbuffer(img))
                     print(f'[{time.strftime("%H:%M:%S")}] '
                           f'Keepalive dot {dot_count}', flush=True)
