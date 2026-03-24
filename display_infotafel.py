@@ -152,6 +152,7 @@ def main():
                     tick = 0
                     dot_x = DOT_X
                     t_start = time.monotonic()
+                    epd.init_part()
 
                     while time.monotonic() - t_start < 50:
                         draw = ImageDraw.Draw(img)
@@ -176,7 +177,6 @@ def main():
                              dot_x + DOT_SIZE, blink_y + DOT_SIZE],
                             fill=fill)
 
-                        epd.init_part()
                         epd.display_Partial(
                             epd.getbuffer(img),
                             0, 0, epd.width, epd.height)
