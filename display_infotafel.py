@@ -190,9 +190,9 @@ def main():
             if epd:
                 epd.sleep()
 
-            # Sync to :12 of the next minute
+            # Sync to :32 of the next minute
             curr = time.localtime().tm_sec
-            delay = 12 - curr if curr <= 12 else 72 - curr
+            delay = 32 - curr if curr <= 32 else 92 - curr
             time.sleep(max(1, delay))
 
         except KeyboardInterrupt:
