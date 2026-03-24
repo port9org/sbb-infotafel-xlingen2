@@ -184,7 +184,7 @@ function processPollen(res) {
 
 /* ── Render ──────────────────────────────────────────────────── */
 function renderClock() {
-  const now = new Date();
+  const now = new Date(Date.now() + 60_000);
   document.getElementById('clock').textContent =
     pad(now.getHours()) + ':' + pad(now.getMinutes());
   const kw = calWeek(now);
