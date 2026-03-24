@@ -25,6 +25,7 @@ except ImportError:
 
 IMAGE_URL    = 'http://localhost:8080/sbb.png'
 LOCAL_IMAGE  = '/tmp/sbb_display.png'
+HEARTBEAT    = '/tmp/display_heartbeat'
 BACKEND_NODE = '1.1.1.1'
 
 DOT_X       = 784   # must be multiple of 8 for e-paper partial refresh
@@ -143,6 +144,7 @@ def main():
             else:
                 print(f'[{time.strftime("%H:%M:%S")}] Preview mode — OK.',
                       flush=True)
+            open(HEARTBEAT, 'w').close()
 
             if has_partial:
                 try:
