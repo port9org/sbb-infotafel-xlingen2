@@ -33,6 +33,8 @@ DOT_SIZE    = 6
 DOT_SPACING = 10
 DOT_MAX_Y   = 60    # stay within header area
 
+DEEP_CLEAN_INTERVAL = 20  # full black→white wipe every N updates
+
 
 def sys_cmd(cmd):
     try:
@@ -109,6 +111,16 @@ def draw_error_screen(epd, error_msg):
         print(f'Failed to draw error screen: {e}', flush=True)
 
 
+def deep_clean(epd):
+    """Cycle pixels through full black→white to prevent charge buildup."""
+    print('Deep clean: black frame...', flush=True)
+    epd.init()
+    epd.display(epd.getbuffer(Image.new('1', (epd.width, epd.height), 0)))
+    print('Deep clean: white clear...', flush=True)
+    epd.init()
+    epd.Clear()
+
+
 def main():
     print('Initializing e-paper display loop...', flush=True)
 
@@ -118,11 +130,15 @@ def main():
         epd = None
 
     has_partial = epd and hasattr(epd, 'display_Partial')
-    print(f'Partial refresh: '
-          f'{"available" if has_partial else "not available"}',
+    print(f'Partial refresh: {"available" if has_partial else "not available"}',
           flush=True)
 
+    if epd:
+        deep_clean(epd)
+        epd.sleep()
+
     consecutive_errors = 0
+    cycle_count = 0
 
     while True:
         try:
@@ -135,8 +151,17 @@ def main():
             if epd and img.size != (epd.width, epd.height):
                 img = img.resize(
                     (epd.width, epd.height), Image.Resampling.LANCZOS)
+            # Threshold at 200: anti-aliased gray edges → white (no dithering on 1-bit panel).
+            # Convert directly to '1' to avoid double-conversion artifacts in getbuffer.
+            img = img.convert('L').point(lambda x: 255 if x >= 200 else 0, '1')
 
             if epd:
+                cycle_count += 1
+                if cycle_count % DEEP_CLEAN_INTERVAL == 0:
+                    print(f'Periodic deep clean at cycle {cycle_count}...',
+                          flush=True)
+                    deep_clean(epd)
+
                 epd.init()
                 epd.display(epd.getbuffer(img))
                 print(f'[{time.strftime("%H:%M:%S")}] Displayed.',
