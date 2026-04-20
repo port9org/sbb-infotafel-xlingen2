@@ -116,6 +116,7 @@ def main():
     if epd:
         epd.init()
         epd.Clear()
+        print('Ready.', flush=True)
 
     consecutive_errors = 0
 
@@ -138,7 +139,6 @@ def main():
             img = img.convert('RGB').convert('L').point(lut, '1')
 
             if epd:
-                epd.init()
                 epd.display(epd.getbuffer(img))
                 print(f'[{time.strftime("%H:%M:%S")}] Displayed.', flush=True)
             else:
