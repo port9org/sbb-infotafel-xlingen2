@@ -10,14 +10,12 @@ IMAGE_PATH = '/home/ke/sbb-infotafel-xlingen2/sbb.png'
 
 epd = epd7in5_V2.EPD()
 epd.init()
-epd.send_command(0x50)
-epd.send_data(0x10)
-epd.send_data(0x17)
-epd.send_command(0x52)
-epd.send_data(0x03)
+epd.Clear()
 
 while True:
     img = Image.open(IMAGE_PATH).convert('RGB').convert('L').point(lambda x: 255 if x >= 200 else 0, '1')
-    epd.display(epd.getbuffer(img))
+    buf = epd.getbuffer(img)
+    epd.display(buf)
+    epd.display(buf)
     print(f'[{time.strftime("%H:%M:%S")}] ok', flush=True)
     time.sleep(60)
