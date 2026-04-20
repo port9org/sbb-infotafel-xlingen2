@@ -13,8 +13,7 @@ epd.init()
 epd.Clear()
 
 while True:
-    img = Image.open(IMAGE_PATH).convert('RGB').convert('L').point(lambda x: 255 if x >= 200 else 0, '1')
-    buf = epd.getbuffer(img)
+    buf = epd.getbuffer(Image.open(IMAGE_PATH))
     epd.display(buf)
     epd.display(buf)
     print(f'[{time.strftime("%H:%M:%S")}] ok', flush=True)
