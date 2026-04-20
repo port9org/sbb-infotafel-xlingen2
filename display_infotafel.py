@@ -8,6 +8,7 @@ Between full refreshes, partial refresh adds keepalive dots every 10s.
 Draws a diagnostic screen on connection failure.
 """
 
+import os
 import subprocess
 import sys
 import time
@@ -26,6 +27,7 @@ except ImportError:
 IMAGE_URL    = 'http://localhost:8080/sbb.png'
 LOCAL_IMAGE  = '/tmp/sbb_display.png'
 HEARTBEAT    = '/tmp/display_heartbeat'
+INVERT_FLAG  = '/tmp/display_invert'   # touch to enable white-on-black; rm to revert
 BACKEND_NODE = '1.1.1.1'
 
 DOT_X       = 784   # must be multiple of 8 for e-paper partial refresh
@@ -153,7 +155,11 @@ def main():
                     (epd.width, epd.height), Image.Resampling.LANCZOS)
             # Threshold at 200: anti-aliased gray edges → white (no dithering on 1-bit panel).
             # Convert directly to '1' to avoid double-conversion artifacts in getbuffer.
-            img = img.convert('L').point(lambda x: 255 if x >= 200 else 0, '1')
+            inverted = os.path.exists(INVERT_FLAG)
+            lut = (lambda x: 0 if x >= 200 else 255) if inverted else (lambda x: 255 if x >= 200 else 0)
+            img = img.convert('L').point(lut, '1')
+            if inverted:
+                print(f'[{time.strftime("%H:%M:%S")}] Invert mode ON', flush=True)
 
             if epd:
                 cycle_count += 1
