@@ -116,7 +116,6 @@ def main():
     if epd:
         epd.init()
         epd.Clear()
-        epd.sleep()
 
     consecutive_errors = 0
 
@@ -141,7 +140,6 @@ def main():
             if epd:
                 epd.init()
                 epd.display(epd.getbuffer(img))
-                epd.sleep()
                 print(f'[{time.strftime("%H:%M:%S")}] Displayed.', flush=True)
             else:
                 print(f'[{time.strftime("%H:%M:%S")}] Preview mode — OK.',
