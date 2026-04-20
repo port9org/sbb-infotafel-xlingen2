@@ -12,7 +12,7 @@ epd = epd7in5_V2.EPD()
 epd.init()
 
 while True:
-    buf = epd.getbuffer(Image.open(IMAGE_PATH))
+    buf = epd.getbuffer(Image.open(IMAGE_PATH).convert('1', dither=Image.NONE))
     epd.display(buf)
     epd.display(buf)
     print(f'[{time.strftime("%H:%M:%S")}] ok', flush=True)
