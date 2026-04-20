@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import time
-import urllib.request
 from PIL import Image
 
 sys.path.append('/home/ke/e-Paper/RaspberryPi_JetsonNano/python/lib')
@@ -11,9 +10,8 @@ except ImportError:
     print('Warning: waveshare_epd not found — preview mode', flush=True)
     epd7in5_V2 = None
 
-IMAGE_URL   = 'http://localhost:8080/sbb.png'
-LOCAL_IMAGE = '/tmp/sbb_display.png'
-HEARTBEAT   = '/tmp/display_heartbeat'
+IMAGE_PATH = '/home/ke/sbb-infotafel-xlingen2/sbb.png'
+HEARTBEAT  = '/tmp/display_heartbeat'
 
 def main():
     epd = epd7in5_V2.EPD() if epd7in5_V2 else None
@@ -22,8 +20,7 @@ def main():
 
     while True:
         try:
-            urllib.request.urlretrieve(IMAGE_URL, LOCAL_IMAGE)
-            img = Image.open(LOCAL_IMAGE).convert('1', dither=Image.NONE)
+            img = Image.open(IMAGE_PATH).convert('1', dither=Image.NONE)
             if epd:
                 buf = epd.getbuffer(img)
                 epd.display(buf)
@@ -40,4 +37,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
