@@ -18,6 +18,12 @@ def main():
 
     if epd:
         epd.init()
+        # Waveshare's own "if screen appears gray" fix — override VCOM interval setting
+        epd.send_command(0x50)
+        epd.send_data(0x10)
+        epd.send_data(0x17)
+        epd.send_command(0x52)
+        epd.send_data(0x03)
         epd.Clear()
 
     while True:
@@ -27,9 +33,7 @@ def main():
                 lambda x: 255 if x >= 200 else 0, '1')
 
             if epd:
-                buf = epd.getbuffer(img)
-                epd.display(buf)
-                epd.display(buf)
+                epd.display(epd.getbuffer(img))
                 print(f'[{time.strftime("%H:%M:%S")}] displayed', flush=True)
 
         except KeyboardInterrupt:
