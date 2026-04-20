@@ -139,7 +139,9 @@ def main():
             img = img.convert('RGB').convert('L').point(lut, '1')
 
             if epd:
-                epd.display(epd.getbuffer(img))
+                buf = epd.getbuffer(img)
+                epd.display(buf)  # first pass: waveform runs against stale old buffer
+                epd.display(buf)  # second pass: old=new=our image, clean result
                 print(f'[{time.strftime("%H:%M:%S")}] Displayed.', flush=True)
             else:
                 print(f'[{time.strftime("%H:%M:%S")}] Preview mode — OK.',
