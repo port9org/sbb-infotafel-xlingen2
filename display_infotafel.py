@@ -10,7 +10,6 @@ IMAGE_PATH = '/home/ke/sbb-infotafel-xlingen2/sbb.png'
 
 epd = epd7in5_V2.EPD()
 epd.init()
-epd.Clear()
 
 while True:
     buf = epd.getbuffer(Image.open(IMAGE_PATH))
