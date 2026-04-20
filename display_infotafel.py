@@ -30,10 +30,6 @@ HEARTBEAT    = '/tmp/display_heartbeat'
 INVERT_FLAG  = '/tmp/display_invert'   # touch to enable white-on-black; rm to revert
 BACKEND_NODE = '1.1.1.1'
 
-DOT_X       = 784   # must be multiple of 8 for e-paper partial refresh
-DOT_SIZE    = 6
-DOT_SPACING = 10
-DOT_MAX_Y   = 60    # stay within header area
 
 DEEP_CLEAN_INTERVAL = 5   # full black→white wipe every N updates
 
@@ -131,10 +127,6 @@ def main():
     else:
         epd = None
 
-    has_partial = epd and hasattr(epd, 'display_Partial')
-    print(f'Partial refresh: {"available" if has_partial else "not available"}',
-          flush=True)
-
     if epd:
         deep_clean(epd)
         epd.sleep()
@@ -176,47 +168,6 @@ def main():
                 print(f'[{time.strftime("%H:%M:%S")}] Preview mode — OK.',
                       flush=True)
             open(HEARTBEAT, 'w').close()
-
-            if has_partial:
-                try:
-                    dot_count = 0
-                    tick = 0
-                    dot_x = DOT_X
-                    t_start = time.monotonic()
-                    epd.init_part()
-
-                    while time.monotonic() - t_start < 20:
-                        draw = ImageDraw.Draw(img)
-
-                        # Every 5 ticks (10s), solidify the blinking dot
-                        if tick > 0 and tick % 5 == 0:
-                            py = 2 + dot_count * DOT_SPACING
-                            draw.rectangle(
-                                [dot_x, py,
-                                 dot_x + DOT_SIZE, py + DOT_SIZE],
-                                fill=0)
-                            dot_count += 1
-
-                        blink_y = 2 + dot_count * DOT_SPACING
-                        if blink_y > DOT_MAX_Y:
-                            break
-
-                        # Toggle blink: ON on even ticks, OFF on odd
-                        fill = 0 if tick % 2 == 0 else 255
-                        draw.rectangle(
-                            [dot_x, blink_y,
-                             dot_x + DOT_SIZE, blink_y + DOT_SIZE],
-                            fill=fill)
-
-                        epd.display_Partial(
-                            epd.getbuffer(img),
-                            0, 0, epd.width, epd.height)
-
-                        tick += 1
-                        time.sleep(2)
-                except Exception as e:
-                    print(f'[{time.strftime("%H:%M:%S")}] '
-                          f'Partial refresh failed: {e}', flush=True)
 
             if epd:
                 epd.sleep()
