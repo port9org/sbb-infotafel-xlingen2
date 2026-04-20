@@ -35,7 +35,7 @@ DOT_SIZE    = 6
 DOT_SPACING = 10
 DOT_MAX_Y   = 60    # stay within header area
 
-DEEP_CLEAN_INTERVAL = 20  # full black→white wipe every N updates
+DEEP_CLEAN_INTERVAL = 5   # full black→white wipe every N updates
 
 
 def sys_cmd(cmd):
@@ -185,7 +185,7 @@ def main():
                     t_start = time.monotonic()
                     epd.init_part()
 
-                    while time.monotonic() - t_start < 50:
+                    while time.monotonic() - t_start < 20:
                         draw = ImageDraw.Draw(img)
 
                         # Every 5 ticks (10s), solidify the blinking dot
