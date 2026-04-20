@@ -145,11 +145,12 @@ def main():
             if epd and img.size != (epd.width, epd.height):
                 img = img.resize(
                     (epd.width, epd.height), Image.Resampling.LANCZOS)
-            # Threshold at 200: anti-aliased gray edges → white (no dithering on 1-bit panel).
-            # Convert directly to '1' to avoid double-conversion artifacts in getbuffer.
+            # Flatten RGBA → RGB before converting to avoid alpha compositing artifacts.
+            # Then threshold at 200 and convert directly to '1' to bypass getbuffer's
+            # internal dithering (convert('1') on a pre-'1' image is a no-op).
             inverted = os.path.exists(INVERT_FLAG)
             lut = (lambda x: 0 if x >= 200 else 255) if inverted else (lambda x: 255 if x >= 200 else 0)
-            img = img.convert('L').point(lut, '1')
+            img = img.convert('RGB').convert('L').point(lut, '1')
             if inverted:
                 print(f'[{time.strftime("%H:%M:%S")}] Invert mode ON', flush=True)
 
